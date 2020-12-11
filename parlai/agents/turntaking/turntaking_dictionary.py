@@ -67,13 +67,14 @@ class TurnTakingDictionaryAgent(DictionaryAgent):
     """
 
     def __init__(self, opt):
-        super().__init__(opt)
         # initialize from vocab path
         warn_once(
             "WARNING: TurnTaking uses a TurnTaking tokenizer; ParlAI dictionary args are ignored"
         )
         # download(opt["datapath"])
-        self.tokenizer = Tokenizer.from_file(opt["tokenizer_path"])
+        self._tokenizer = Tokenizer.from_file(opt["tokenizer_path"])
+        print(self._tokenizer)
+        super().__init__(opt)
 
         self.start_token = "[CLS]"
         self.end_token = "[SEP]"
@@ -82,11 +83,11 @@ class TurnTakingDictionaryAgent(DictionaryAgent):
         self.mask_token = "[MASK]"
         self.unk_token = "[UNK]"
 
-        self.start_idx = self.tokenizer.token_to_id(self.start_token)
-        self.end_idx = self.tokenizer.token_to_id(self.end_token)
-        self.pad_idx = self.tokenizer.token_to_id(self.pad_token)
-        self.unk_idx = self.tokenizer.token_to_id(self.unk_token)
-        self.null_idx = self.tokenizer.token_to_id(self.null_token)
+        self.start_idx = self._tokenizer.token_to_id(self.start_token)
+        self.end_idx = self._tokenizer.token_to_id(self.end_token)
+        self.pad_idx = self._tokenizer.token_to_id(self.pad_token)
+        self.unk_idx = self._tokenizer.token_to_id(self.unk_token)
+        self.null_idx = self._tokenizer.token_to_id(self.null_token)
 
         # set tok2ind for special tokens
         self.tok2ind[self.start_token] = self.start_idx
@@ -100,15 +101,18 @@ class TurnTakingDictionaryAgent(DictionaryAgent):
         self.ind2tok[self.pad_idx] = self.null_token
         self.ind2tok[self.unk_idx] = self.unk_token
 
+    def __len__(self):
+        return self._tokenizer.get_vocab_size()
+
     def txt2vec(self, text, vec_type=list):
-        tokens = self.tokenizer.encode(text)
+        tokens = self._tokenizer.encode(text, add_special_tokens=False)
         return tokens.ids
 
     def vec2txt(self, vec):
         if not isinstance(vec, list):
             # assume tensor
             vec = vec.tolist()
-        return self.tokenizer.decode(vec)
+        return self._tokenizer.decode(vec)
 
     def act(self):
         return {}
